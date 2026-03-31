@@ -2,25 +2,24 @@ import { useState, useEffect, useRef } from "react";
 
 // ── AI ───────────────────────────────────────────────────────────────────────
 const AI = async (system, user) => {
-  const response = await fetch("/api/chat", {
+  const r = await fetch("api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "llama3-70b-8192",
       messages: [
-        { role: "system", content: String(system) },
-        { role: "user", content: String(user) },
+        { role: "system", content: system },
+        { role: "user", content: user },
       ],
-      max_tokens: 1024,
+      max_tokens: 1000,
+      temperature: 0.7,
     }),
   });
-  const text = await response.text();
-  console.log("Groq raw response:", text);
-  const data = JSON.parse(text);
-  if (data.error) throw new Error(data.error.message);
-  return data.choices?.[0]?.message?.content || "";
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.choices?.[0]?.message?.content || "";
 };
 
 // ── HOOKS ────────────────────────────────────────────────────────────────────
@@ -844,9 +843,9 @@ function Forecast({ niche }) {
     </div>
   );
 }
-
+ 
 // ════════════════════════════════════════════════════════════════════════════
-// ROOT
+//     ROOT
 // ════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [tab, setTab] = useState("dash");
@@ -861,6 +860,14 @@ export default function App() {
     guild: <Guild niche={niche} />,
     forecast: <Forecast niche={niche} />,
   };
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#060810", color: "#e2e8f0", fontFamily: "'DM Sans','Segoe UI',sans-serif", display: "flex" }}>
@@ -878,43 +885,77 @@ export default function App() {
         textarea{resize:none;}
       `}</style>
 
-      {/* Sidebar */}
-      <div style={{ width: 200, background: "#07090f", borderRight: "1px solid #0f1420", display: "flex", flexDirection: "column", padding: "22px 0", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 100 }}>
-        <div style={{ padding: "0 18px 22px", borderBottom: "1px solid #0f1420" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#e86322,#e84393)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 900, color: "#fff", boxShadow: "0 4px 18px #e8632240" }}>L</div>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 18, letterSpacing: "-.03em", color: "#fff" }}>Lancer</div>
-              <div style={{ fontSize: 9, color: "#334155", letterSpacing: ".08em" }}>FREELANCE OS</div>
+      {/* DESKTOP Sidebar */}
+      {!isMobile && (
+        <div style={{ width: 200, background: "#07090f", borderRight: "1px solid #0f1420", display: "flex", flexDirection: "column", padding: "22px 0", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 100 }}>
+          <div style={{ padding: "0 18px 22px", borderBottom: "1px solid #0f1420" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#e86322,#e84393)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 900, color: "#fff", boxShadow: "0 4px 18px #e8632240" }}>L</div>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 18, letterSpacing: "-.03em", color: "#fff" }}>Lancer</div>
+                <div style={{ fontSize: 9, color: "#334155", letterSpacing: ".08em" }}>FREELANCE OS</div>
+              </div>
+            </div>
+          </div>
+          <nav style={{ flex: 1, padding: "16px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 9, background: tab === t.id ? "#e8632215" : "transparent", border: `1px solid ${tab === t.id ? "#e8632228" : "transparent"}`, color: tab === t.id ? "#e86322" : "#334155", cursor: "pointer", fontSize: 13, fontWeight: tab === t.id ? 700 : 400, transition: "all .15s", textAlign: "left", width: "100%" }}>
+                <span style={{ fontSize: 14, opacity: tab === t.id ? 1 : .5 }}>{t.icon}</span>
+                {t.label}
+                {tab === t.id && <div style={{ marginLeft: "auto", width: 4, height: 4, borderRadius: "50%", background: "#e86322" }} />}
+              </button>
+            ))}
+          </nav>
+          <div style={{ padding: "14px 16px", borderTop: "1px solid #0f1420" }}>
+            <div style={{ padding: "10px 12px", background: "#090d18", border: "1px solid #111827", borderRadius: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", letterSpacing: ".06em" }}>VOICE DNA ON</span>
+              </div>
+              <div style={{ fontSize: 10, color: "#334155", lineHeight: 1.5 }}>92% match · learning fast</div>
             </div>
           </div>
         </div>
+      )}
 
-        <nav style={{ flex: 1, padding: "16px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 9, background: tab === t.id ? "#e8632215" : "transparent", border: `1px solid ${tab === t.id ? "#e8632228" : "transparent"}`, color: tab === t.id ? "#e86322" : "#334155", cursor: "pointer", fontSize: 13, fontWeight: tab === t.id ? 700 : 400, transition: "all .15s", textAlign: "left", width: "100%" }}>
-              <span style={{ fontSize: 14, opacity: tab === t.id ? 1 : .5 }}>{t.icon}</span>
-              {t.label}
-              {tab === t.id && <div style={{ marginLeft: "auto", width: 4, height: 4, borderRadius: "50%", background: "#e86322" }} />}
-            </button>
-          ))}
-        </nav>
-
-        <div style={{ padding: "14px 16px", borderTop: "1px solid #0f1420" }}>
-          <div style={{ padding: "10px 12px", background: "#090d18", border: "1px solid #111827", borderRadius: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", letterSpacing: ".06em" }}>VOICE DNA ON</span>
-            </div>
-            <div style={{ fontSize: 10, color: "#334155", lineHeight: 1.5 }}>92% match · learning fast</div>
+      {/* MOBILE Top Bar */}
+      {isMobile && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 54, background: "#07090f", borderBottom: "1px solid #0f1420", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 100 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#e86322,#e84393)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#fff" }}>L</div>
+            <div style={{ fontWeight: 900, fontSize: 16, letterSpacing: "-.03em", color: "#fff" }}>Lancer</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#4ade80", letterSpacing: ".06em" }}>VOICE DNA ON</span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div style={{ marginLeft: 200, flex: 1, padding: "32px 36px", maxWidth: 1060, overflowY: "auto" }}>
+      {/* Main Content */}
+      <div style={{
+        marginLeft: isMobile ? 0 : 200,
+        flex: 1,
+        padding: isMobile ? "70px 16px 90px" : "32px 36px",
+        maxWidth: isMobile ? "100%" : 1060,
+        overflowY: "auto",
+        width: "100%",
+      }}>
         {screens[tab]}
       </div>
+
+      {/* MOBILE Bottom Navigation */}
+      {isMobile && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: 64, background: "#07090f", borderTop: "1px solid #0f1420", display: "flex", alignItems: "center", justifyContent: "space-around", zIndex: 100, padding: "0 4px" }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 10px", borderRadius: 10, background: "transparent", border: "none", color: tab === t.id ? "#e86322" : "#334155", cursor: "pointer", transition: "all .15s", flex: 1 }}>
+              <span style={{ fontSize: 18, opacity: tab === t.id ? 1 : .4 }}>{t.icon}</span>
+              <span style={{ fontSize: 9, fontWeight: tab === t.id ? 700 : 400, letterSpacing: ".04em" }}>{t.label}</span>
+              {tab === t.id && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#e86322" }} />}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
