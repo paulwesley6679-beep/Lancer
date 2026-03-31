@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react";
 
 // ── AI ───────────────────────────────────────────────────────────────────────
 const AI = async (system, user) => {
-  const r = await fetch("api/chat", {
+  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${import.meta.env.VITE_GROQ_KEY}`
     },
     body: JSON.stringify({
-      model: "llama3-70b-8192",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -843,9 +844,9 @@ function Forecast({ niche }) {
     </div>
   );
 }
- 
+
 // ════════════════════════════════════════════════════════════════════════════
-//     ROOT
+// ROOT
 // ════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [tab, setTab] = useState("dash");
